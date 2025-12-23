@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Pages
+name: Build
 
 on:
   push:
@@ -6,12 +6,9 @@ on:
       - main
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      deployments: write
-    name: Deploy to Cloudflare Pages
+    name: Build Next.js Project
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -32,18 +29,5 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@f0a1cd58cd66095dee69bfa18fa5efd1dde93bca # v1.5.0
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: 848cf0b18d51e0170e0d1537aec3505a
-          projectName: lucidia-earth
-          directory: out
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Add Custom Domain
-        run: |
-          curl -X POST "https://api.cloudflare.com/client/v4/accounts/848cf0b18d51e0170e0d1537aec3505a/pages/projects/lucidia-earth/domains" \
-            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            --data '{"name":"lucidia.earth"}' || echo "Domain may already exist"
+      - name: Build Success
+        run: echo "✅ Build completed successfully. Deploy locally with wrangler."
