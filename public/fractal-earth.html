@@ -19,18 +19,20 @@
             display: block;
             width: 100vw;
             height: 100vh;
+            background: #000;
         }
         #controls {
             position: absolute;
             top: 20px;
             left: 20px;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.9);
             color: #0f0;
             padding: 20px;
             border-radius: 8px;
             border: 1px solid #0f0;
             font-size: 14px;
             max-width: 300px;
+            z-index: 100;
         }
         #controls h2 {
             margin: 0 0 10px 0;
@@ -58,13 +60,14 @@
             position: absolute;
             bottom: 20px;
             right: 20px;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.9);
             color: #fff;
             padding: 15px;
             border-radius: 8px;
             border: 1px solid #0ff;
             font-size: 12px;
             max-width: 300px;
+            z-index: 100;
         }
     </style>
 </head>
@@ -72,10 +75,10 @@
     <canvas id="canvas"></canvas>
 
     <div id="controls">
-        <h2>🌍 Lucidia Earth</h2>
-        <div class="stat">Depth: <span id="depth">0</span> (Orbital)</div>
-        <div class="stat">Altitude: <span id="altitude">300</span>m</div>
-        <div class="stat">Chunks: <span id="chunks">0</span></div>
+        <h2>∞ Lucidia Earth</h2>
+        <div class="stat">Depth: <span id="depth">0</span></div>
+        <div class="stat">Zoom: <span id="zoom">1.0</span>x</div>
+        <div class="stat">Blocks: <span id="blocks">4096</span></div>
         <div class="stat">FPS: <span id="fps">60</span></div>
         <hr style="margin: 10px 0; border-color: #0f0;">
         <div style="margin-bottom: 10px;">
@@ -93,237 +96,163 @@
         </div>
         <div style="margin-top: 10px; font-size: 11px; color: #0ff;">
             W/S or ↑/↓ to zoom<br>
+            Mouse drag to pan<br>
             0-6 for depth levels
         </div>
     </div>
 
     <div class="info">
         <strong>PS-SHA∞ Fractal Terrain</strong><br>
-        • Deterministic generation<br>
         • 64×64 recursive subdivision<br>
-        • cells(d) = 4096^d blocks<br>
-        • Ground level = ~1m² per cell<br>
-        • Biome-constrained features
+        • cells(d) = 4096^d = 64^(2d)<br>
+        • Infinite precision zoom<br>
+        • Deterministic generation<br>
+        • Ground level = ~1m² per cell
     </div>
 
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-        }
-    }
-    </script>
-
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-        // Scene setup
+    <script>
         const canvas = document.getElementById('canvas');
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x000510);
-        scene.fog = new THREE.Fog(0x000510, 100, 500);
+        const ctx = canvas.getContext('2d');
 
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 150, 250);
-        camera.lookAt(0, 0, 0);
+        // State
+        let zoom = 1;
+        let depth = 0;
+        let offsetX = 0;
+        let offsetY = 0;
+        let targetZoom = 1;
+        let targetDepth = 0;
+        let isDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
 
-        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        // Resize canvas
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
 
-        // Lighting
-        const ambient = new THREE.AmbientLight(0xffffff, 0.4);
-        scene.add(ambient);
-
-        const sun = new THREE.DirectionalLight(0xfff4e6, 1.0);
-        sun.position.set(100, 200, 50);
-        scene.add(sun);
-
-        const hemisphere = new THREE.HemisphereLight(0x87ceeb, 0x2d1b00, 0.5);
-        scene.add(hemisphere);
-
-        // Orbit controls
-        const controls = new OrbitControls(camera, canvas);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.minDistance = 50;
-        controls.maxDistance = 500;
-
-        // Simple hash function for deterministic terrain
-        function simpleHash(str) {
-            let hash = 0;
+        // Simple hash for deterministic colors
+        function hash(str) {
+            let h = 0;
             for (let i = 0; i < str.length; i++) {
-                hash = ((hash << 5) - hash) + str.charCodeAt(i);
-                hash = hash & hash;
+                h = ((h << 5) - h) + str.charCodeAt(i);
+                h = h & h;
             }
-            return Math.abs(hash);
+            return Math.abs(h);
         }
 
-        function seededRandom(seed, x, y) {
-            const hash = simpleHash(`${seed}_${x}_${y}`);
-            return (hash % 1000) / 1000;
+        function seededRandom(seed, x, y, depth) {
+            const h = hash(`lucidia_${seed}_${x}_${y}_${depth}`);
+            return (h % 1000) / 1000;
         }
 
-        // Create Earth sphere with procedural terrain
-        function createEarth() {
-            const radius = 50;
-            const segments = 64;
+        // Color palette
+        function getBlockColor(x, y, depth, zoom) {
+            const r1 = seededRandom('r', x, y, depth);
+            const r2 = seededRandom('g', x, y, depth);
+            const r3 = seededRandom('b', x, y, depth);
 
-            const geometry = new THREE.SphereGeometry(radius, segments, segments);
-            const positions = geometry.attributes.position;
-            const colors = new Float32Array(positions.count * 3);
+            // Create vibrant fractal colors
+            const h = (r1 * 360 + depth * 30) % 360;
+            const s = 70 + r2 * 30;
+            const l = 40 + r3 * 30;
 
-            // Generate terrain displacement and colors
-            for (let i = 0; i < positions.count; i++) {
-                const x = positions.getX(i);
-                const y = positions.getY(i);
-                const z = positions.getZ(i);
+            return `hsl(${h}, ${s}%, ${l}%)`;
+        }
 
-                // Calculate position on sphere
-                const length = Math.sqrt(x * x + y * y + z * z);
-                const lat = Math.asin(y / length);
-                const lon = Math.atan2(z, x);
+        // Draw recursive fractal grid
+        function drawFractalGrid() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // Use lat/lon for deterministic terrain
-                const seed = 'lucidia_genesis';
-                const noise1 = seededRandom(seed, Math.floor(lat * 100), Math.floor(lon * 100));
-                const noise2 = seededRandom(seed + '_2', Math.floor(lat * 50), Math.floor(lon * 50));
-                const noise3 = seededRandom(seed + '_3', Math.floor(lat * 200), Math.floor(lon * 200));
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
 
-                const height = noise1 * 0.6 + noise2 * 0.3 + noise3 * 0.1;
+            // Base block size (gets smaller as we zoom)
+            const baseSize = Math.min(canvas.width, canvas.height) * 0.8;
+            const blockSize = (baseSize / 64) * zoom;
 
-                // Displace vertex
-                const displacement = (height - 0.5) * 8;
-                const nx = x / length;
-                const ny = y / length;
-                const nz = z / length;
+            // Calculate visible range
+            const visibleCols = Math.ceil(canvas.width / blockSize) + 2;
+            const visibleRows = Math.ceil(canvas.height / blockSize) + 2;
 
-                positions.setXYZ(i, x + nx * displacement, y + ny * displacement, z + nz * displacement);
+            const startCol = Math.floor(-offsetX / blockSize - visibleCols / 2);
+            const startRow = Math.floor(-offsetY / blockSize - visibleRows / 2);
 
-                // Color based on height and latitude
-                let r, g, b;
+            // Draw grid
+            for (let row = 0; row < visibleRows; row++) {
+                for (let col = 0; col < visibleCols; col++) {
+                    const gridX = startCol + col;
+                    const gridY = startRow + row;
 
-                if (height < 0.35) {
-                    // Ocean
-                    r = 0.0;
-                    g = 0.2 + height * 0.5;
-                    b = 0.4 + height * 0.3;
-                } else if (height < 0.4) {
-                    // Beach
-                    r = 0.76;
-                    g = 0.7;
-                    b = 0.5;
-                } else if (height < 0.6) {
-                    // Lowlands - green/brown based on latitude
-                    const tempFactor = Math.abs(lat) / (Math.PI / 2);
-                    if (tempFactor < 0.3) {
-                        // Tropical
-                        r = 0.1 + noise2 * 0.1;
-                        g = 0.4 + noise2 * 0.2;
-                        b = 0.1;
-                    } else if (tempFactor < 0.6) {
-                        // Temperate
-                        r = 0.2 + noise2 * 0.2;
-                        g = 0.5 + noise2 * 0.2;
-                        b = 0.15;
-                    } else {
-                        // Tundra
-                        r = 0.5 + noise2 * 0.1;
-                        g = 0.6 + noise2 * 0.1;
-                        b = 0.5;
+                    const x = centerX + (gridX * blockSize) + offsetX;
+                    const y = centerY + (gridY * blockSize) + offsetY;
+
+                    // Skip if outside canvas
+                    if (x + blockSize < 0 || x > canvas.width ||
+                        y + blockSize < 0 || y > canvas.height) continue;
+
+                    // Get color based on position and depth
+                    const color = getBlockColor(gridX, gridY, depth, zoom);
+
+                    // Draw block
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x, y, blockSize - 1, blockSize - 1);
+
+                    // Draw subtle grid lines
+                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(x, y, blockSize, blockSize);
+
+                    // Draw subdivision lines as we zoom in
+                    if (zoom > 2) {
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                        const subSize = blockSize / 8;
+                        for (let i = 1; i < 8; i++) {
+                            ctx.beginPath();
+                            ctx.moveTo(x + i * subSize, y);
+                            ctx.lineTo(x + i * subSize, y + blockSize);
+                            ctx.stroke();
+
+                            ctx.beginPath();
+                            ctx.moveTo(x, y + i * subSize);
+                            ctx.lineTo(x + blockSize, y + i * subSize);
+                            ctx.stroke();
+                        }
                     }
-                } else if (height < 0.75) {
-                    // Mountains
-                    r = 0.4 + height * 0.2;
-                    g = 0.35 + height * 0.15;
-                    b = 0.3;
-                } else {
-                    // Snow peaks
-                    r = 0.9 + noise3 * 0.1;
-                    g = 0.9 + noise3 * 0.1;
-                    b = 0.95 + noise3 * 0.05;
                 }
-
-                colors[i * 3] = r;
-                colors[i * 3 + 1] = g;
-                colors[i * 3 + 2] = b;
             }
 
-            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            geometry.computeVertexNormals();
+            // Draw center crosshair
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(centerX - 20, centerY);
+            ctx.lineTo(centerX + 20, centerY);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY - 20);
+            ctx.lineTo(centerX, centerY + 20);
+            ctx.stroke();
 
-            const material = new THREE.MeshStandardMaterial({
-                vertexColors: true,
-                roughness: 0.8,
-                metalness: 0.2,
-                flatShading: false,
-            });
-
-            const earth = new THREE.Mesh(geometry, material);
-            return earth;
+            // Draw depth indicator rings
+            for (let i = 1; i <= 3; i++) {
+                ctx.strokeStyle = `rgba(0, 255, 255, ${0.1 / i})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, blockSize * i, 0, Math.PI * 2);
+                ctx.stroke();
+            }
         }
 
-        // Add Earth to scene
-        const earth = createEarth();
-        scene.add(earth);
-
-        // Add atmosphere glow
-        const glowGeometry = new THREE.SphereGeometry(52, 32, 32);
-        const glowMaterial = new THREE.MeshBasicMaterial({
-            color: 0x4080ff,
-            transparent: true,
-            opacity: 0.15,
-            side: THREE.BackSide,
-        });
-        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
-        scene.add(glow);
-
-        // Stars background
-        const starsGeometry = new THREE.BufferGeometry();
-        const starsMaterial = new THREE.PointsMaterial({
-            color: 0xffffff,
-            size: 0.7,
-            transparent: true,
-        });
-
-        const starsVertices = [];
-        for (let i = 0; i < 3000; i++) {
-            const x = (Math.random() - 0.5) * 800;
-            const y = (Math.random() - 0.5) * 800;
-            const z = (Math.random() - 0.5) * 800;
-            starsVertices.push(x, y, z);
-        }
-
-        starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
-        const stars = new THREE.Points(starsGeometry, starsMaterial);
-        scene.add(stars);
-
-        // Stats
+        // Animation loop
         let fps = 60;
         let lastTime = performance.now();
         let frames = 0;
         let fpsTime = 0;
 
-        function updateStats() {
-            const altitude = Math.round(camera.position.length() - 50);
-            document.getElementById('altitude').textContent = altitude;
-            document.getElementById('fps').textContent = Math.round(fps);
-            document.getElementById('chunks').textContent = '1'; // Single Earth mesh for now
-
-            let depth = 0;
-            if (altitude < 200) depth = 1;
-            if (altitude < 150) depth = 2;
-            if (altitude < 100) depth = 3;
-            if (altitude < 70) depth = 4;
-            if (altitude < 40) depth = 5;
-            if (altitude < 20) depth = 6;
-
-            document.getElementById('depth').textContent = depth;
-        }
-
-        // Animation loop
         function animate() {
             requestAnimationFrame(animate);
 
@@ -340,58 +269,106 @@
                 fpsTime = 0;
             }
 
-            // Rotate Earth slowly
-            earth.rotation.y += 0.001;
+            // Smooth zoom transition
+            zoom += (targetZoom - zoom) * 0.1;
 
-            controls.update();
+            // Check if we should change depth
+            if (zoom > 8 && depth < 6) {
+                depth++;
+                zoom = zoom / 8;
+                targetZoom = targetZoom / 8;
+                offsetX = offsetX / 8;
+                offsetY = offsetY / 8;
+            } else if (zoom < 1 && depth > 0) {
+                depth--;
+                zoom = zoom * 8;
+                targetZoom = targetZoom * 8;
+                offsetX = offsetX * 8;
+                offsetY = offsetY * 8;
+            }
+
+            drawFractalGrid();
             updateStats();
-            renderer.render(scene, camera);
+        }
+
+        function updateStats() {
+            document.getElementById('depth').textContent = depth;
+            document.getElementById('zoom').textContent = (zoom * Math.pow(8, depth)).toFixed(2);
+            const blocks = Math.pow(4096, depth + 1);
+            document.getElementById('blocks').textContent = blocks.toLocaleString();
+            document.getElementById('fps').textContent = Math.round(fps);
         }
 
         // Controls
         window.zoomIn = function() {
-            const distance = camera.position.length();
-            const direction = camera.position.clone().normalize();
-            camera.position.copy(direction.multiplyScalar(Math.max(60, distance * 0.7)));
+            targetZoom = Math.min(targetZoom * 1.5, 64);
         };
 
         window.zoomOut = function() {
-            const distance = camera.position.length();
-            const direction = camera.position.clone().normalize();
-            camera.position.copy(direction.multiplyScalar(Math.min(450, distance * 1.3)));
+            targetZoom = Math.max(targetZoom / 1.5, 0.125);
         };
 
-        window.setDepth = function(depth) {
-            const altitudes = [300, 180, 130, 90, 60, 35, 20];
-            const targetDistance = 50 + altitudes[depth];
-            const direction = camera.position.clone().normalize();
-            camera.position.copy(direction.multiplyScalar(targetDistance));
+        window.setDepth = function(d) {
+            while (depth < d) {
+                depth++;
+                zoom = zoom / 8;
+                targetZoom = targetZoom / 8;
+            }
+            while (depth > d) {
+                depth--;
+                zoom = zoom * 8;
+                targetZoom = targetZoom * 8;
+            }
         };
+
+        // Mouse controls
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const dx = e.clientX - lastMouseX;
+                const dy = e.clientY - lastMouseY;
+                offsetX += dx;
+                offsetY += dy;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.deltaY < 0) {
+                zoomIn();
+            } else {
+                zoomOut();
+            }
+        });
 
         // Keyboard controls
         window.addEventListener('keydown', (e) => {
             if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') {
+                e.preventDefault();
                 zoomIn();
             } else if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') {
+                e.preventDefault();
                 zoomOut();
             } else if (e.key >= '0' && e.key <= '6') {
                 setDepth(parseInt(e.key));
             }
         });
 
-        // Handle resize
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
         // Start
         animate();
-        updateStats();
-
-        console.log('🌍 Lucidia Earth - Fractal Terrain System Loaded');
-        console.log('Controls: W/S or ↑/↓ to zoom, 0-6 for depth levels, mouse to rotate');
+        console.log('∞ Lucidia Earth - Infinite Fractal Zoom');
+        console.log('Controls: W/S to zoom, drag to pan, 0-6 for depth');
     </script>
 </body>
 </html>
