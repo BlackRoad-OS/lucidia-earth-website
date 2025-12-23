@@ -63,6 +63,13 @@ export default function MeetCTA() {
               >
                 🔮 Fractal Terrain (PS-SHA∞)
               </a>
+
+              <a
+                href="/genesis"
+                className="inline-block px-8 py-4 bg-gradient-to-r from-red-600 via-purple-600 to-indigo-600 text-white font-inter font-medium text-base rounded-full hover:from-red-500 hover:via-purple-500 hover:to-indigo-500 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-purple-500/20"
+              >
+                🜃 Genesis (Smith × Lo Shu × Harmonics)
+              </a>
             </div>
           </div>
         </FadeIn>
