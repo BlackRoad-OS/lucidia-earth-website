@@ -56,6 +56,13 @@ export default function MeetCTA() {
               >
                 ∞ Infinite Zoom Earth
               </a>
+
+              <a
+                href="/fractal-terrain"
+                className="inline-block px-8 py-4 bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 text-white font-inter font-medium text-base rounded-full hover:from-orange-500 hover:via-amber-500 hover:to-yellow-500 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-orange-500/20"
+              >
+                🔮 Fractal Terrain (PS-SHA∞)
+              </a>
             </div>
           </div>
         </FadeIn>
