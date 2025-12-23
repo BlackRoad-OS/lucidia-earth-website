@@ -32,6 +32,13 @@ export default function MeetCTA() {
             </a>
 
             <a
+              href="/biomes"
+              className="inline-block px-10 py-5 bg-gradient-to-r from-emerald-600 to-blue-600 text-white font-inter font-medium text-lg rounded-full hover:from-emerald-500 hover:to-blue-500 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-emerald-500/20"
+            >
+              Explore Living Earth 🌍
+            </a>
+
+            <a
               href="/story"
               className="inline-block px-10 py-5 border-2 border-soft-gold/30 text-warm-white font-inter font-medium text-lg rounded-full hover:border-soft-gold hover:bg-soft-gold/10 transition-all duration-300"
             >
