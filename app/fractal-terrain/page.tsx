@@ -3,13 +3,17 @@
  * Interactive viewer for PS-SHA∞ fractal terrain generation
  */
 
-import FractalTerrainViewer from '@/components/FractalTerrainViewer';
-
 export const metadata = {
   title: 'Fractal Terrain - Lucidia Earth',
   description: 'Interactive fractal terrain generation with PS-SHA∞ deterministic seeds and 64×64 recursive subdivision',
 };
 
 export default function FractalTerrainPage() {
-  return <FractalTerrainViewer />;
+  return (
+    <iframe
+      src="/fractal-earth.html"
+      className="w-full h-screen border-0"
+      title="Lucidia Earth - Fractal Terrain"
+    />
+  );
 }

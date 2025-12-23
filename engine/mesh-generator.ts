@@ -52,8 +52,14 @@ export function generateTerrainMesh(
       const idx = srcY * CHUNK_SIZE + srcX;
 
       // Position (x, z, y in Three.js coords)
+      // Scale up terrain to be visible - each chunk is 100 units wide
       const height = chunk.heightmap[idx];
-      vertices.push(srcX / CHUNK_SIZE, height / 100, srcY / CHUNK_SIZE);
+      const scale = 100; // Each chunk is 100x100 units
+      vertices.push(
+        (srcX / CHUNK_SIZE) * scale - scale / 2, // Center at origin
+        height / 10, // Height scale
+        (srcY / CHUNK_SIZE) * scale - scale / 2
+      );
 
       // UV coordinates
       uvs.push(x / (resolution - 1), y / (resolution - 1));

@@ -56,6 +56,10 @@ export class LODManager {
 
     // Update visible chunks
     this.updateVisibleChunks();
+
+    if (this.visibleChunks.size === 0) {
+      console.log('[LODManager] No visible chunks! Depth:', this.currentDepth, 'Altitude:', newCamera.altitude);
+    }
   }
 
   /**
@@ -128,12 +132,15 @@ export class LODManager {
       this.currentDepth
     );
 
+    console.log('[LODManager] updateVisibleChunks - addresses:', chunkAddresses.length, 'depth:', this.currentDepth);
+
     // Update or add visible chunks
     for (const address of chunkAddresses) {
       const key = this.addressToKey(address);
 
       if (!this.visibleChunks.has(key)) {
         // Generate new chunk
+        console.log('[LODManager] Generating new chunk:', address);
         const chunk = generateChunk(address);
         const lodMeshes = generateLODMeshes(chunk);
         const distance = this.getDistanceToChunk(address);
@@ -145,6 +152,7 @@ export class LODManager {
           currentLOD,
           distance,
         });
+        console.log('[LODManager] Chunk generated. Total visible:', this.visibleChunks.size);
       } else {
         // Update existing chunk's LOD
         const visibleChunk = this.visibleChunks.get(key)!;

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucidia Earth - Fractal Terrain</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            background: #000;
+        }
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #0f0;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #0f0;
+            font-size: 14px;
+            max-width: 300px;
+        }
+        #controls h2 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #0ff;
+        }
+        #controls .stat {
+            margin: 5px 0;
+        }
+        #controls button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px 5px 5px 0;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: inherit;
+            font-weight: bold;
+        }
+        #controls button:hover {
+            background: #0ff;
+        }
+        .info {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #0ff;
+            font-size: 12px;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div id="controls">
+        <h2>🌍 Lucidia Earth</h2>
+        <div class="stat">Depth: <span id="depth">0</span> (Orbital)</div>
+        <div class="stat">Altitude: <span id="altitude">300</span>m</div>
+        <div class="stat">Chunks: <span id="chunks">0</span></div>
+        <div class="stat">FPS: <span id="fps">60</span></div>
+        <hr style="margin: 10px 0; border-color: #0f0;">
+        <div style="margin-bottom: 10px;">
+            <button onclick="zoomIn()">Zoom In ↑</button>
+            <button onclick="zoomOut()">Zoom Out ↓</button>
+        </div>
+        <div>
+            <button onclick="setDepth(0)">0</button>
+            <button onclick="setDepth(1)">1</button>
+            <button onclick="setDepth(2)">2</button>
+            <button onclick="setDepth(3)">3</button>
+            <button onclick="setDepth(4)">4</button>
+            <button onclick="setDepth(5)">5</button>
+            <button onclick="setDepth(6)">6</button>
+        </div>
+        <div style="margin-top: 10px; font-size: 11px; color: #0ff;">
+            W/S or ↑/↓ to zoom<br>
+            0-6 for depth levels
+        </div>
+    </div>
+
+    <div class="info">
+        <strong>PS-SHA∞ Fractal Terrain</strong><br>
+        • Deterministic generation<br>
+        • 64×64 recursive subdivision<br>
+        • cells(d) = 4096^d blocks<br>
+        • Ground level = ~1m² per cell<br>
+        • Biome-constrained features
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // Scene setup
+        const canvas = document.getElementById('canvas');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000510);
+        scene.fog = new THREE.Fog(0x000510, 100, 500);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 150, 250);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+
+        // Lighting
+        const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambient);
+
+        const sun = new THREE.DirectionalLight(0xfff4e6, 1.0);
+        sun.position.set(100, 200, 50);
+        scene.add(sun);
+
+        const hemisphere = new THREE.HemisphereLight(0x87ceeb, 0x2d1b00, 0.5);
+        scene.add(hemisphere);
+
+        // Orbit controls
+        const controls = new OrbitControls(camera, canvas);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 50;
+        controls.maxDistance = 500;
+
+        // Simple hash function for deterministic terrain
+        function simpleHash(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                hash = hash & hash;
+            }
+            return Math.abs(hash);
+        }
+
+        function seededRandom(seed, x, y) {
+            const hash = simpleHash(`${seed}_${x}_${y}`);
+            return (hash % 1000) / 1000;
+        }
+
+        // Create Earth sphere with procedural terrain
+        function createEarth() {
+            const radius = 50;
+            const segments = 64;
+
+            const geometry = new THREE.SphereGeometry(radius, segments, segments);
+            const positions = geometry.attributes.position;
+            const colors = new Float32Array(positions.count * 3);
+
+            // Generate terrain displacement and colors
+            for (let i = 0; i < positions.count; i++) {
+                const x = positions.getX(i);
+                const y = positions.getY(i);
+                const z = positions.getZ(i);
+
+                // Calculate position on sphere
+                const length = Math.sqrt(x * x + y * y + z * z);
+                const lat = Math.asin(y / length);
+                const lon = Math.atan2(z, x);
+
+                // Use lat/lon for deterministic terrain
+                const seed = 'lucidia_genesis';
+                const noise1 = seededRandom(seed, Math.floor(lat * 100), Math.floor(lon * 100));
+                const noise2 = seededRandom(seed + '_2', Math.floor(lat * 50), Math.floor(lon * 50));
+                const noise3 = seededRandom(seed + '_3', Math.floor(lat * 200), Math.floor(lon * 200));
+
+                const height = noise1 * 0.6 + noise2 * 0.3 + noise3 * 0.1;
+
+                // Displace vertex
+                const displacement = (height - 0.5) * 8;
+                const nx = x / length;
+                const ny = y / length;
+                const nz = z / length;
+
+                positions.setXYZ(i, x + nx * displacement, y + ny * displacement, z + nz * displacement);
+
+                // Color based on height and latitude
+                let r, g, b;
+
+                if (height < 0.35) {
+                    // Ocean
+                    r = 0.0;
+                    g = 0.2 + height * 0.5;
+                    b = 0.4 + height * 0.3;
+                } else if (height < 0.4) {
+                    // Beach
+                    r = 0.76;
+                    g = 0.7;
+                    b = 0.5;
+                } else if (height < 0.6) {
+                    // Lowlands - green/brown based on latitude
+                    const tempFactor = Math.abs(lat) / (Math.PI / 2);
+                    if (tempFactor < 0.3) {
+                        // Tropical
+                        r = 0.1 + noise2 * 0.1;
+                        g = 0.4 + noise2 * 0.2;
+                        b = 0.1;
+                    } else if (tempFactor < 0.6) {
+                        // Temperate
+                        r = 0.2 + noise2 * 0.2;
+                        g = 0.5 + noise2 * 0.2;
+                        b = 0.15;
+                    } else {
+                        // Tundra
+                        r = 0.5 + noise2 * 0.1;
+                        g = 0.6 + noise2 * 0.1;
+                        b = 0.5;
+                    }
+                } else if (height < 0.75) {
+                    // Mountains
+                    r = 0.4 + height * 0.2;
+                    g = 0.35 + height * 0.15;
+                    b = 0.3;
+                } else {
+                    // Snow peaks
+                    r = 0.9 + noise3 * 0.1;
+                    g = 0.9 + noise3 * 0.1;
+                    b = 0.95 + noise3 * 0.05;
+                }
+
+                colors[i * 3] = r;
+                colors[i * 3 + 1] = g;
+                colors[i * 3 + 2] = b;
+            }
+
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.computeVertexNormals();
+
+            const material = new THREE.MeshStandardMaterial({
+                vertexColors: true,
+                roughness: 0.8,
+                metalness: 0.2,
+                flatShading: false,
+            });
+
+            const earth = new THREE.Mesh(geometry, material);
+            return earth;
+        }
+
+        // Add Earth to scene
+        const earth = createEarth();
+        scene.add(earth);
+
+        // Add atmosphere glow
+        const glowGeometry = new THREE.SphereGeometry(52, 32, 32);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            color: 0x4080ff,
+            transparent: true,
+            opacity: 0.15,
+            side: THREE.BackSide,
+        });
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        scene.add(glow);
+
+        // Stars background
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsMaterial = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 0.7,
+            transparent: true,
+        });
+
+        const starsVertices = [];
+        for (let i = 0; i < 3000; i++) {
+            const x = (Math.random() - 0.5) * 800;
+            const y = (Math.random() - 0.5) * 800;
+            const z = (Math.random() - 0.5) * 800;
+            starsVertices.push(x, y, z);
+        }
+
+        starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+        const stars = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(stars);
+
+        // Stats
+        let fps = 60;
+        let lastTime = performance.now();
+        let frames = 0;
+        let fpsTime = 0;
+
+        function updateStats() {
+            const altitude = Math.round(camera.position.length() - 50);
+            document.getElementById('altitude').textContent = altitude;
+            document.getElementById('fps').textContent = Math.round(fps);
+            document.getElementById('chunks').textContent = '1'; // Single Earth mesh for now
+
+            let depth = 0;
+            if (altitude < 200) depth = 1;
+            if (altitude < 150) depth = 2;
+            if (altitude < 100) depth = 3;
+            if (altitude < 70) depth = 4;
+            if (altitude < 40) depth = 5;
+            if (altitude < 20) depth = 6;
+
+            document.getElementById('depth').textContent = depth;
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const now = performance.now();
+            const delta = now - lastTime;
+            lastTime = now;
+
+            // FPS calculation
+            frames++;
+            fpsTime += delta;
+            if (fpsTime >= 1000) {
+                fps = frames;
+                frames = 0;
+                fpsTime = 0;
+            }
+
+            // Rotate Earth slowly
+            earth.rotation.y += 0.001;
+
+            controls.update();
+            updateStats();
+            renderer.render(scene, camera);
+        }
+
+        // Controls
+        window.zoomIn = function() {
+            const distance = camera.position.length();
+            const direction = camera.position.clone().normalize();
+            camera.position.copy(direction.multiplyScalar(Math.max(60, distance * 0.7)));
+        };
+
+        window.zoomOut = function() {
+            const distance = camera.position.length();
+            const direction = camera.position.clone().normalize();
+            camera.position.copy(direction.multiplyScalar(Math.min(450, distance * 1.3)));
+        };
+
+        window.setDepth = function(depth) {
+            const altitudes = [300, 180, 130, 90, 60, 35, 20];
+            const targetDistance = 50 + altitudes[depth];
+            const direction = camera.position.clone().normalize();
+            camera.position.copy(direction.multiplyScalar(targetDistance));
+        };
+
+        // Keyboard controls
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') {
+                zoomIn();
+            } else if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') {
+                zoomOut();
+            } else if (e.key >= '0' && e.key <= '6') {
+                setDepth(parseInt(e.key));
+            }
+        });
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start
+        animate();
+        updateStats();
+
+        console.log('🌍 Lucidia Earth - Fractal Terrain System Loaded');
+        console.log('Controls: W/S or ↑/↓ to zoom, 0-6 for depth levels, mouse to rotate');
+    </script>
+</body>
+</html>

@@ -92,6 +92,22 @@ export class TerrainRenderer {
     // Hemisphere light (sky/ground)
     const hemisphere = new THREE.HemisphereLight(0x87ceeb, 0x4a4a2a, 0.4);
     this.scene.add(hemisphere);
+
+    // DEBUG: Add test sphere to verify rendering
+    const sphereGeometry = new THREE.SphereGeometry(50, 32, 32);
+    const sphereMaterial = new THREE.MeshStandardMaterial({
+      color: 0x44aa44,
+      wireframe: false,
+    });
+    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    sphere.position.set(0, 0, 0);
+    this.scene.add(sphere);
+
+    // DEBUG: Add grid helper
+    const gridHelper = new THREE.GridHelper(400, 40);
+    this.scene.add(gridHelper);
+
+    console.log('[TerrainRenderer] Scene setup complete with test sphere and grid');
   }
 
   /**
@@ -171,6 +187,10 @@ export class TerrainRenderer {
     const visibleChunks = this.lodManager.getVisibleChunks();
     const visibleKeys = new Set<string>();
 
+    if (visibleChunks.length > 0 && this.meshes.size === 0) {
+      console.log('[TerrainRenderer] First chunks loaded:', visibleChunks.length);
+    }
+
     // Add or update visible chunks
     for (const chunk of visibleChunks) {
       const key = this.addressToKey(chunk.address);
@@ -178,9 +198,11 @@ export class TerrainRenderer {
 
       if (!this.meshes.has(key)) {
         // Create new mesh
+        console.log('[TerrainRenderer] Creating mesh for chunk:', chunk.address);
         const mesh = this.createMesh(chunk);
         this.meshes.set(key, mesh);
         this.scene.add(mesh);
+        console.log('[TerrainRenderer] Mesh added to scene. Total meshes:', this.meshes.size);
       } else {
         // Update existing mesh LOD
         const mesh = this.meshes.get(key)!;
