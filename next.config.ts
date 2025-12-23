@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  output: 'export',
   // Enable experimental features for better performance
   experimental: {
     optimizePackageImports: ['framer-motion'],
