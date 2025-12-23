@@ -253,11 +253,11 @@
     </div>
 
     <div class="stats-bar">
-        <div class="stat"><span class="stat-icon">🌳</span><span class="stat-value" id="treeCount">0</span></div>
-        <div class="stat"><span class="stat-icon">🏠</span><span class="stat-value" id="houseCount">0</span></div>
-        <div class="stat"><span class="stat-icon">🐾</span><span class="stat-value" id="animalCount">0</span></div>
-        <div class="stat"><span class="stat-icon">🤖</span><span class="stat-value" id="agentCount">0</span></div>
-        <div class="stat"><span class="stat-icon">🌸</span><span class="stat-value" id="flowerCount">0</span></div>
+        <div class="stat"><span class="stat-icon">T</span><span class="stat-value" id="treeCount">0</span></div>
+        <div class="stat"><span class="stat-icon">H</span><span class="stat-value" id="houseCount">0</span></div>
+        <div class="stat"><span class="stat-icon">A</span><span class="stat-value" id="animalCount">0</span></div>
+        <div class="stat"><span class="stat-icon">G</span><span class="stat-value" id="agentCount">0</span></div>
+        <div class="stat"><span class="stat-icon">F</span><span class="stat-value" id="flowerCount">0</span></div>
     </div>
 
     <div class="biome-panel">
@@ -271,22 +271,22 @@
         <div class="info-desc" id="infoDesc">The world's largest rainforest...</div>
         <div class="info-stats">
             <div class="info-stat">
-                <div class="info-stat-icon">🌳</div>
+                <div class="info-stat-icon">T</div>
                 <div class="info-stat-value" id="infoTrees">0</div>
                 <div class="info-stat-label">Trees</div>
             </div>
             <div class="info-stat">
-                <div class="info-stat-icon">🏠</div>
+                <div class="info-stat-icon">H</div>
                 <div class="info-stat-value" id="infoHouses">0</div>
                 <div class="info-stat-label">Houses</div>
             </div>
             <div class="info-stat">
-                <div class="info-stat-icon">🐾</div>
+                <div class="info-stat-icon">A</div>
                 <div class="info-stat-value" id="infoAnimals">0</div>
                 <div class="info-stat-label">Animals</div>
             </div>
             <div class="info-stat">
-                <div class="info-stat-icon">🌡️</div>
+                <div class="info-stat-icon">°</div>
                 <div class="info-stat-value" id="infoTemp">0°</div>
                 <div class="info-stat-label">Temp</div>
             </div>
@@ -294,11 +294,11 @@
     </div>
 
     <div class="controls">
-        <button class="ctrl-btn active" id="btnRotate" title="Auto Rotate">🔄</button>
-        <button class="ctrl-btn active" id="btnClouds" title="Clouds">☁️</button>
-        <button class="ctrl-btn active" id="btnLife" title="Life">🌿</button>
-        <button class="ctrl-btn" id="btnNight" title="Night">🌙</button>
-        <button class="ctrl-btn" id="btnLabels" title="Labels">🏷️</button>
+        <button class="ctrl-btn active" id="btnRotate" title="Auto Rotate">↻</button>
+        <button class="ctrl-btn active" id="btnClouds" title="Clouds">☁</button>
+        <button class="ctrl-btn active" id="btnLife" title="Life">+</button>
+        <button class="ctrl-btn" id="btnNight" title="Night">☾</button>
+        <button class="ctrl-btn" id="btnLabels" title="Labels">#</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -318,7 +318,7 @@
             TROPICAL_RAINFOREST: {
                 name: "Tropical Rainforest",
                 color: 0x1a5a1a,
-                icon: "🌴",
+                icon: "TR",
                 temp: "27°C",
                 treeTypes: ['tropical', 'palm', 'giant'],
                 treeColors: [0x0d5c0d, 0x157a15, 0x1a8a1a, 0x228b22],
@@ -332,7 +332,7 @@
             TEMPERATE_FOREST: {
                 name: "Temperate Forest",
                 color: 0x2d5a27,
-                icon: "🌲",
+                icon: "TF",
                 temp: "12°C",
                 treeTypes: ['oak', 'maple', 'birch', 'pine'],
                 treeColors: [0x228b22, 0x2e8b2e, 0x3cb371, 0x1a5a1a],
@@ -346,7 +346,7 @@
             BOREAL_TAIGA: {
                 name: "Boreal Forest / Taiga",
                 color: 0x1a4a2a,
-                icon: "🌲",
+                icon: "BT",
                 temp: "-5°C",
                 treeTypes: ['spruce', 'fir', 'pine'],
                 treeColors: [0x0a3a0a, 0x154a15, 0x1a5a1a],
@@ -360,7 +360,7 @@
             TUNDRA: {
                 name: "Tundra",
                 color: 0x8fbc8f,
-                icon: "❄️",
+                icon: "TU",
                 temp: "-20°C",
                 treeTypes: ['shrub'],
                 treeColors: [0x556b2f, 0x6b8e23],
@@ -374,7 +374,7 @@
             DESERT_HOT: {
                 name: "Hot Desert",
                 color: 0xc2b280,
-                icon: "🏜️",
+                icon: "DH",
                 temp: "38°C",
                 treeTypes: ['cactus', 'joshua', 'palm_desert'],
                 treeColors: [0x228b22, 0x556b2f, 0x6b8e23],
@@ -388,7 +388,7 @@
             DESERT_COLD: {
                 name: "Cold Desert",
                 color: 0xa0a080,
-                icon: "🏔️",
+                icon: "DC",
                 temp: "-10°C",
                 treeTypes: ['shrub', 'sage'],
                 treeColors: [0x808060, 0x6b8e6b],
@@ -402,7 +402,7 @@
             SAVANNA: {
                 name: "Savanna",
                 color: 0xbdb76b,
-                icon: "🦁",
+                icon: "SV",
                 temp: "25°C",
                 treeTypes: ['acacia', 'baobab'],
                 treeColors: [0x6b8e23, 0x556b2f, 0x8b7355],
@@ -416,7 +416,7 @@
             GRASSLAND: {
                 name: "Grassland / Prairie",
                 color: 0x9acd32,
-                icon: "🌾",
+                icon: "GR",
                 temp: "15°C",
                 treeTypes: ['grass_tree'],
                 treeColors: [0x7cba3d, 0x90c040],
@@ -430,7 +430,7 @@
             MEDITERRANEAN: {
                 name: "Mediterranean",
                 color: 0x6b8e23,
-                icon: "🫒",
+                icon: "MD",
                 temp: "18°C",
                 treeTypes: ['olive', 'cypress', 'cork_oak'],
                 treeColors: [0x556b2f, 0x2f4f4f, 0x6b8e23],
@@ -444,7 +444,7 @@
             MOUNTAIN: {
                 name: "Mountain / Alpine",
                 color: 0x696969,
-                icon: "⛰️",
+                icon: "MT",
                 temp: "-8°C",
                 treeTypes: ['pine_alpine', 'fir'],
                 treeColors: [0x1a4a1a, 0x0a3a0a],
@@ -459,7 +459,7 @@
             ICE_SHEET: {
                 name: "Ice Sheet / Polar",
                 color: 0xf0f8ff,
-                icon: "🧊",
+                icon: "IC",
                 temp: "-50°C",
                 treeTypes: [],
                 treeColors: [],
@@ -474,7 +474,7 @@
             WETLAND: {
                 name: "Wetland / Swamp",
                 color: 0x2f4f4f,
-                icon: "🐊",
+                icon: "WL",
                 temp: "22°C",
                 treeTypes: ['mangrove', 'cypress_swamp', 'willow'],
                 treeColors: [0x2f4f2f, 0x3d5c3d, 0x4a6b4a],
