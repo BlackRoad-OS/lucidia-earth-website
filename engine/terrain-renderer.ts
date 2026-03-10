@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { LODManager, CameraState, VisibleChunk } from './lod-manager';
 import { MeshData } from './mesh-generator';
+import { ChunkAddress, ChunkCoordinate } from '../types/chunk';
 
 export interface RendererConfig {
   canvas: HTMLCanvasElement;
@@ -333,8 +334,8 @@ export class TerrainRenderer {
   /**
    * Convert address to cache key
    */
-  private addressToKey(address: any): string {
-    return `${address.triangleId}:${address.path.map((p: any) => `${p.x},${p.y}`).join(':')}`;
+  private addressToKey(address: ChunkAddress): string {
+    return `${address.triangleId}:${address.path.map((p: ChunkCoordinate) => `${p.x},${p.y}`).join(':')}`;
   }
 
   /**

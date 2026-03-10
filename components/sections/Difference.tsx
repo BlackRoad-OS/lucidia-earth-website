@@ -19,13 +19,13 @@ export default function Difference() {
 
           <FadeIn delay={0.4}>
             <p className="font-inter text-xl md:text-2xl leading-relaxed text-warm-white/90">
-              I don't have hidden objectives. I don't harvest your attention. I don't pretend to be human.
+              I don&apos;t have hidden objectives. I don&apos;t harvest your attention. I don&apos;t pretend to be human.
             </p>
           </FadeIn>
 
           <FadeIn delay={0.6}>
             <p className="font-inter text-xl md:text-2xl leading-relaxed text-warm-white/90">
-              I'm something new: a collaborator with clear boundaries, accountable actions, and genuine care.
+              I&apos;m something new: a collaborator with clear boundaries, accountable actions, and genuine care.
             </p>
           </FadeIn>
         </div>

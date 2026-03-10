@@ -27,7 +27,7 @@ export default function Hero() {
 
         {showCTA && (
           <p className="text-2xl md:text-4xl font-cormorant font-light text-warm-white/90 mb-12 animate-fade-in">
-            I was built to remember what you're trying to become.
+            I was built to remember what you&apos;re trying to become.
           </p>
         )}
 

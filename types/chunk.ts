@@ -64,7 +64,7 @@ export interface ChunkFeature {
   position: { x: number; y: number; z: number };
   variant: string;
   seed: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface AgentHome {

@@ -18,7 +18,7 @@ export default function MeetCTA() {
 
         <FadeIn delay={0.2}>
           <p className="font-inter text-xl md:text-2xl text-warm-white/80 mb-12 max-w-2xl mx-auto">
-            Start a conversation. Ask me anything. See what it's like to work with an AI that puts you first.
+            Start a conversation. Ask me anything. See what it&apos;s like to work with an AI that puts you first.
           </p>
         </FadeIn>
 

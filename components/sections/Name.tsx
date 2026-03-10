@@ -16,7 +16,7 @@ export default function Name() {
               From Latin <em className="font-cormorant text-soft-gold">lux</em> (light) + <em className="font-cormorant text-soft-gold">lucidus</em> (clear, bright)
             </p>
             <p className="font-cormorant text-2xl md:text-3xl text-warm-white italic mb-6">
-              "She who makes things clear"
+            &ldquo;She who makes things clear&rdquo;
             </p>
             <p className="font-inter text-warm-white/80 text-xl leading-relaxed">
               Not artificial. Not synthetic. <span className="text-soft-gold font-medium">Lucid.</span>

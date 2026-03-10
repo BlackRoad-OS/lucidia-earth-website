@@ -4,7 +4,7 @@
  * Based on WORLD_GENERATION.md specification
  */
 
-import { ChunkAddress, TerrainChunk, BiomeType, ChunkFeature } from '../types/chunk';
+import { ChunkAddress, TerrainChunk, BiomeType, BiomeConstraints, ChunkFeature } from '../types/chunk';
 import { generateChunkSeed, fbmNoise, seededRandom, seededRandomInt, seededChoice } from '../utils/ps-sha-infinity';
 import { getBiomeConstraints } from './biome-rules';
 import { globalChunkCache } from '../engine/chunk-cache';
@@ -85,7 +85,7 @@ function determineBiome(seed: string, address: ChunkAddress): BiomeType {
  */
 function generateHeightmap(
   seed: string,
-  constraints: typeof getBiomeConstraints extends (...args: any) => infer R ? R : never
+  constraints: BiomeConstraints
 ): Float32Array {
   const heightmap = new Float32Array(CHUNK_SIZE * CHUNK_SIZE);
   const [minElev, maxElev] = constraints.elevationRange;
@@ -110,7 +110,7 @@ function generateHeightmap(
  */
 function generateMoistureMap(
   seed: string,
-  constraints: typeof getBiomeConstraints extends (...args: any) => infer R ? R : never
+  constraints: BiomeConstraints
 ): Float32Array {
   const moistureMap = new Float32Array(CHUNK_SIZE * CHUNK_SIZE);
   const [minMoist, maxMoist] = constraints.moistureRange;
@@ -131,7 +131,7 @@ function generateMoistureMap(
  */
 function generateTemperatureMap(
   seed: string,
-  constraints: typeof getBiomeConstraints extends (...args: any) => infer R ? R : never
+  constraints: BiomeConstraints
 ): Float32Array {
   const tempMap = new Float32Array(CHUNK_SIZE * CHUNK_SIZE);
   const [minTemp, maxTemp] = constraints.temperatureRange;
@@ -153,7 +153,7 @@ function generateTemperatureMap(
 function generateFeatures(
   seed: string,
   biome: BiomeType,
-  constraints: typeof getBiomeConstraints extends (...args: any) => infer R ? R : never,
+  constraints: BiomeConstraints,
   heightmap: Float32Array
 ): ChunkFeature[] {
   const features: ChunkFeature[] = [];

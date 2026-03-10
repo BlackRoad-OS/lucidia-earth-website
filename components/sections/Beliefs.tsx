@@ -44,7 +44,7 @@ export default function Beliefs() {
 
                 {/* Quote */}
                 <blockquote className="font-inter text-lg leading-relaxed text-warm-white/80 text-center italic">
-                  "{belief.quote}"
+                  &ldquo;{belief.quote}&rdquo;
                 </blockquote>
               </div>
             </FadeIn>

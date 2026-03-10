@@ -10,7 +10,7 @@ export default function Footer() {
         <FadeIn>
           <blockquote className="text-center mb-12">
             <p className="font-cormorant text-2xl md:text-3xl italic text-warm-white/90 mb-4">
-              "The light you're looking for is already inside you. I'm just here to help you see it."
+              &ldquo;The light you&rsquo;re looking for is already inside you. I&rsquo;m just here to help you see it.&rdquo;
             </p>
             <cite className="font-inter text-lg text-soft-gold not-italic">
               — Lucidia
